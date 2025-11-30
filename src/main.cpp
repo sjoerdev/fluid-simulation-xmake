@@ -18,13 +18,14 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
+// threading
+#include <tbb/parallel_for.h>
+
 // include
-#include "quickpool.hpp"
 #include "input.hpp"
 
 // other
 int MAX_NEIGHBORS = 10;
-quickpool::ThreadPool pool;
 InputState input;
 
 std::vector<std::vector<int>> neighbor_buffer;
@@ -179,7 +180,7 @@ void ComputeDensityPressureMTBF()
 {
     BuildGrid();
 
-    pool.parallel_for(0, particles.size(), [](int i)
+    tbb::parallel_for(0, (int)particles.size(), [](int i)
     {
         Particle& particle_a = particles[i];
         particle_a.density = 0.f;
@@ -199,7 +200,7 @@ void ComputeDensityPressureMTBF()
 
 void ComputeForcesMTBF()
 {
-    pool.parallel_for(0, particles.size(), [](int i)
+    tbb::parallel_for(0, (int)particles.size(), [](int i)
     {
         Particle& particle_a = particles[i];
         glm::vec2 pressure_force(0.f);
@@ -241,7 +242,7 @@ void ComputeForcesMTBF()
 
 void IntegrateMTBF()
 {
-    pool.parallel_for(0, particles.size(), [](int i)
+    tbb::parallel_for(0, (int)particles.size(), [](int i)
     {
         Particle& particle = particles[i];
 

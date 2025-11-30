@@ -2,6 +2,7 @@
 add_requires("glm")
 add_requires("glfw")
 add_requires("glad")
+add_requires("tbb")
 
 -- update vscode intellisense
 add_rules("plugin.compile_commands.autoupdate", { outputdir = ".vscode" })
@@ -17,4 +18,4 @@ target("project")
     add_files("src/*.cpp")
 
     -- linking
-    add_packages("glfw", "glad", "glm")
+    add_packages("glfw", "glad", "glm", "tbb")

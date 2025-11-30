@@ -1,0 +1,8 @@
+# xmake cache
+.xmake/
+
+# xmake builds
+build/
+
+# xmake compile commands
+.vscode/compile_commands.json

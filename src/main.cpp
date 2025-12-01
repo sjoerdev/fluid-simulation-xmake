@@ -78,7 +78,7 @@ struct Particle
 
 // particles
 std::vector<Particle> particles;
-int MAX_PARTICLES = 10000;
+int MAX_PARTICLES = 4000;
 
 // projection
 int WINDOW_WIDTH = 1400;
@@ -154,7 +154,7 @@ inline std::vector<int>& GetNearNeighborsMTBF(Particle& particle, int index)
 
 void SpawnParticles()
 {
-    float radius = 60;
+    float radius = 160;
     glm::vec2 center = glm::vec2(WINDOW_WIDTH / 2, WINDOW_HEIGHT / 2);
     float spacing = KERNEL_RADIUS;
 
@@ -232,7 +232,7 @@ void ComputeForcesMTBF()
         glm::vec2 mouse_dir = glm::normalize(mouse_pos - particle_a.position);
         float mouse_dist = glm::distance(mouse_pos, particle_a.position);
         bool mouse_pressing = input.IsMouseButtonHeldDown(0);
-        glm::vec2 mouse_force = (mouse_pressing && mouse_dist < 10000) ? mouse_dir * PARTICLE_MASS / particle_a.density * 20.f : glm::vec2(0.f);
+        glm::vec2 mouse_force = (mouse_pressing && mouse_dist < 320) ? mouse_dir * PARTICLE_MASS / particle_a.density * 20.f : glm::vec2(0.f);
 
         glm::vec2 gravity_force = glm::vec2(0.f, GRAVITY) * PARTICLE_MASS / particle_a.density;
 
@@ -487,19 +487,12 @@ int main()
     while (!glfwWindowShouldClose(window))
     {
         input.Update();
-
-        if (input.IsKeyDownThisFrame(GLFW_KEY_SPACE))
-        {
-            SpawnParticles();
-        }
-
-        if (input.IsKeyDownThisFrame(GLFW_KEY_R))
-        {
-            ResetParticles();
-        }
+        if (input.IsKeyDownThisFrame(GLFW_KEY_SPACE)) SpawnParticles();
+        if (input.IsKeyDownThisFrame(GLFW_KEY_R)) ResetParticles();
 
         UpdateMTBF();
         RenderMTBF();
+
         glfwSwapBuffers(window);
         glfwPollEvents();
     }

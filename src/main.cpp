@@ -483,7 +483,7 @@ int main()
     // init input
     input.SetContext(window);
 
-    // Now you can call OpenGL functions safely
+    // main loop
     while (!glfwWindowShouldClose(window))
     {
         input.Update();

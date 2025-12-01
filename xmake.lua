@@ -17,5 +17,8 @@ target("project")
     -- sources
     add_files("src/*.cpp")
 
+    -- includes
+    add_includedirs("include/")
+
     -- linking
     add_packages("glfw", "glad", "glm", "tbb")

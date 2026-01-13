@@ -22,7 +22,7 @@
 #include <tbb/parallel_for.h>
 
 // include
-#include "input.hpp"
+#include "input.h"
 
 // other
 int MAX_NEIGHBORS = 10;

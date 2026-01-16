@@ -9,10 +9,8 @@
 // opengl
 #include <glad/glad.h>
 
-// rgfw
-#define RGFW_IMPLEMENTATION
-#define RGFW_OPENGL
-#include "rgfw/RGFW.h"
+// glfw
+#include <GLFW/glfw3.h>
 
 // glm
 #include <glm/glm.hpp>
@@ -21,10 +19,14 @@
 #include <glm/gtc/type_ptr.hpp>
 
 // threading
-// TODO
+#include <tbb/parallel_for.h>
 
 // include
+#include "input.h"
 #include "particle.h"
+
+// other
+Input input;
 
 // buffers
 std::vector<std::vector<int>> neighbor_buffer;
@@ -59,10 +61,6 @@ float BOUND_DAMPING = -0.5f;
 
 // neighbour constants
 int MAX_NEIGHBORS = 10;
-
-// other
-glm::vec2 mousepos;
-bool mousehelddown;
 
 
 
@@ -170,7 +168,7 @@ void ComputeDensityPressureMTBF()
 {
     BuildGrid();
 
-    for (int i = 0; i < (int)particles.size(); i++)
+    tbb::parallel_for(0, (int)particles.size(), [](int i)
     {
         Particle& particle_a = particles[i];
         particle_a.density = 0.f;
@@ -185,12 +183,12 @@ void ComputeDensityPressureMTBF()
         }
 
         particle_a.pressure = GAS_CONSTANT * (particle_a.density - REST_DENSITY);
-    }
+    });
 }
 
 void ComputeForcesMTBF()
 {
-    for (int i = 0; i < (int)particles.size(); i++)
+    tbb::parallel_for(0, (int)particles.size(), [](int i)
     {
         Particle& particle_a = particles[i];
         glm::vec2 pressure_force(0.f);
@@ -218,22 +216,21 @@ void ComputeForcesMTBF()
             }
         }
 
-
-        glm::vec2 mouse_pos = glm::vec2(mousepos.x, WINDOW_HEIGHT - mousepos.y);
+        glm::vec2 mouse_pos = glm::vec2(input.GetMousePosition().x, WINDOW_HEIGHT - input.GetMousePosition().y);
         glm::vec2 mouse_dir = glm::normalize(mouse_pos - particle_a.position);
         float mouse_dist = glm::distance(mouse_pos, particle_a.position);
-        bool mouse_pressing = mousehelddown;
+        bool mouse_pressing = input.IsMouseButtonHeldDown(0);
         glm::vec2 mouse_force = (mouse_pressing && mouse_dist < 320) ? mouse_dir * PARTICLE_MASS / particle_a.density * 20.f : glm::vec2(0.f);
 
         glm::vec2 gravity_force = glm::vec2(0.f, GRAVITY) * PARTICLE_MASS / particle_a.density;
 
         particle_a.force = pressure_force + viscosity_force + gravity_force + mouse_force;
-    }
+    });
 }
 
 void IntegrateMTBF()
 {
-    for (int i = 0; i < (int)particles.size(); i++)
+    tbb::parallel_for(0, (int)particles.size(), [](int i)
     {
         Particle& particle = particles[i];
 
@@ -262,7 +259,7 @@ void IntegrateMTBF()
             particle.velocity.y *= BOUND_DAMPING;
             particle.position.y = WINDOW_HEIGHT - BOUNDARY_EPSILON;
         }
-    }
+    });
 }
 
 void UpdateMTBF()
@@ -434,8 +431,28 @@ void SetupBuffers()
     glBindVertexArray(0);
 }
 
-void InitSimulation()
+int main()
 {
+    if (!glfwInit()) return -1;
+
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+
+    // create glfw window
+    GLFWwindow* window = glfwCreateWindow(WINDOW_WIDTH, WINDOW_HEIGHT, "opengl", NULL, NULL);
+    if (!window)
+    {
+        glfwTerminate();
+        return -1;
+    }
+
+    // set glfw context
+    glfwMakeContextCurrent(window);
+
+    // init glad
+    if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) return -1;
+
     // init opengl
     glClearColor(0, 0, 0, 1);
     glEnable(GL_PROGRAM_POINT_SIZE);
@@ -450,41 +467,24 @@ void InitSimulation()
 
     // init simulation
     SpawnParticles();
-}
 
-int main()
-{
-    // window
-    RGFW_glHints* hints = RGFW_getGlobalHints_OpenGL();
-    hints->major = 3;
-    hints->minor = 3;
-    RGFW_setGlobalHints_OpenGL(hints);
-    RGFW_window* window = RGFW_createWindow("window", 0, 0, WINDOW_WIDTH, WINDOW_HEIGHT, RGFW_windowCenter | RGFW_windowNoResize | RGFW_windowOpenGL);
+    // init input
+    input.SetContext(window);
 
-    // init glad
-    if (!gladLoadGL()) return -1;
-
-    InitSimulation();
-
-    while (RGFW_window_shouldClose(window) == RGFW_FALSE)
+    // main loop
+    while (!glfwWindowShouldClose(window))
     {
-        RGFW_event event;
-        RGFW_window_checkEvent(window, &event);
-        
-        int left, right;
-        RGFW_window_getMouse(window, &left, &right);
-        mousepos = {left, right};
-        mousehelddown = RGFW_window_isMouseDown(window, RGFW_mouseLeft);
-
-        if (RGFW_window_isKeyPressed(window, RGFW_space)) SpawnParticles();
-        if (RGFW_window_isKeyPressed(window, RGFW_r)) ResetParticles();
+        input.Update();
+        if (input.IsKeyDownThisFrame(GLFW_KEY_SPACE)) SpawnParticles();
+        if (input.IsKeyDownThisFrame(GLFW_KEY_R)) ResetParticles();
 
         UpdateMTBF();
         RenderMTBF();
 
-        RGFW_window_swapBuffers_OpenGL(window);
+        glfwSwapBuffers(window);
+        glfwPollEvents();
     }
 
-    RGFW_window_close(window);
+    glfwTerminate();
     return 0;
 }

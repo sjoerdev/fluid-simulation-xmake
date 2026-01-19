@@ -1,4 +1,4 @@
 @echo off
 
 cmake -S . -B build
-cmake --build build --config Debug
+cmake --build build --config Debug --parallel

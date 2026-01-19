@@ -6,14 +6,16 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 file(GLOB_RECURSE SOURCES
-    src/*.cpp
-    src/*.c
+    src/**.cpp
+    src/**.c
+    deps/glad/src/glad.c
 )
 
 add_executable(project ${SOURCES})
 
 target_include_directories(project PRIVATE
     include
+    deps/glad/include
 )
 
 add_subdirectory(deps/glfw)

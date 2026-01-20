@@ -18,40 +18,14 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
-// threading
-#include <thread>
-
-template<typename T>
-void parallel_for(int begin, int end, T&& func)
-{
-    int thread_count = std::thread::hardware_concurrency();
-    int chunk = (end - begin + thread_count - 1) / thread_count;
-
-    std::vector<std::thread> threads;
-
-    for (int t = 0; t < thread_count; ++t)
-    {
-        int start = begin + t * chunk;
-        int stop = std::min(start + chunk, end);
-
-        if (start >= stop) break;
-
-        auto emplace = [=, &func](){
-            for (int i = start; i < stop; ++i) func(i);
-        };
-
-        threads.emplace_back(emplace);
-    }
-
-    for (auto& thread : threads) thread.join();
-}
-
 // include
 #include "input.h"
 #include "particle.h"
+#include "threadpool.h"
 
 // other
 Input input;
+thread_pool pool;
 
 // buffers
 std::vector<std::vector<int>> neighbor_buffer;
@@ -86,8 +60,6 @@ float BOUND_DAMPING = -0.5f;
 
 // neighbour constants
 int MAX_NEIGHBORS = 10;
-
-
 
 // particles
 std::vector<Particle> particles;
@@ -193,7 +165,7 @@ void ComputeDensityPressureMTBF()
 {
     BuildGrid();
 
-    parallel_for(0, (int)particles.size(), [](int i)
+    pool.parallel_for(0, (int)particles.size(), [](int i)
     {
         Particle& particle_a = particles[i];
         particle_a.density = 0.f;
@@ -213,7 +185,7 @@ void ComputeDensityPressureMTBF()
 
 void ComputeForcesMTBF()
 {
-    parallel_for(0, (int)particles.size(), [](int i)
+    pool.parallel_for(0, (int)particles.size(), [](int i)
     {
         Particle& particle_a = particles[i];
         glm::vec2 pressure_force(0.f);
@@ -255,7 +227,7 @@ void ComputeForcesMTBF()
 
 void IntegrateMTBF()
 {
-    parallel_for(0, (int)particles.size(), [](int i)
+    pool.parallel_for(0, (int)particles.size(), [](int i)
     {
         Particle& particle = particles[i];
 
@@ -478,6 +450,9 @@ int main()
     // init gl3w
     if (gl3wInit()) return -1;
 
+    // initialize thread pool
+    pool.start_pool();
+
     // init opengl
     glClearColor(0, 0, 0, 1);
     glEnable(GL_PROGRAM_POINT_SIZE);
@@ -509,6 +484,9 @@ int main()
         glfwSwapBuffers(window);
         glfwPollEvents();
     }
+
+    // stop thread pool
+    pool.stop_pool();
 
     glfwTerminate();
     return 0;

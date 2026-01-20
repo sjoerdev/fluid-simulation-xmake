@@ -1,10 +1,14 @@
 #include "Particle.h"
 
-Particle::Particle(float x, float y)
+Particle CreateParticle(float x, float y)
 {
-    position = glm::vec2(x, y);
-    velocity = glm::vec2(0.f, 0.f);
-    force = glm::vec2(0.f, 0.f);
-    density = 0;
-    pressure = 0.f;
+    Particle particle = {};
+
+    particle.position = glm::vec2(x, y);
+    particle.velocity = glm::vec2(0.f, 0.f);
+    particle.force = glm::vec2(0.f, 0.f);
+    particle.density = 0;
+    particle.pressure = 0.f;
+
+    return particle;
 }

@@ -150,7 +150,7 @@ void SpawnParticles()
             glm::vec2 offset = glm::vec2(RandomValue() - 0.5f, RandomValue() - 0.5f);
             glm::vec2 position = glm::vec2(x, y);
             bool inside = distance(center, position) <= radius;
-            if (inside && particles.size() < MAX_PARTICLES) particles.push_back(Particle(x + offset.x, y + offset.y));
+            if (inside && particles.size() < MAX_PARTICLES) particles.push_back(CreateParticle(x + offset.x, y + offset.y));
         }
     }
 }

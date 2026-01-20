@@ -10,8 +10,8 @@ struct Particle
     glm::vec2 force;
     float density;
     float pressure;
-
-    Particle(float x, float y);
 };
+
+Particle CreateParticle(float x, float y);
 
 #endif // PARTICLE_H

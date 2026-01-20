@@ -13,7 +13,7 @@ public:
     void add_job(const std::function<void()>& job);
     void stop_pool();
     bool is_busy();
-    void parallel_for(int start, int end, const std::function<void(int)>& func);
+    void parallel_for(int start, int end, std::function<void(int)>&& func);
 
 private:
     void search();

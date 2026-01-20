@@ -12,7 +12,7 @@ void thread_pool::search() // infinite loop that searches for jobs
     {
         std::function<void()> job;
         {
-            std::unique_lock<std::mutex> lock(queue_mutex);
+            std::unique_lock<std::mutex> lock{queue_mutex};
 
             mutex_condition.wait(lock, [this]()
             {
@@ -64,7 +64,7 @@ void thread_pool::stop_pool() // destroy thread pool
     threads.clear();
 }
 
-void thread_pool::parallel_for(int start, int end, const std::function<void(int)>& func) // parallel for loop
+void thread_pool::parallel_for(int start, int end, std::function<void(int)>&& func)
 {
     int length = end - start;
     if (length <= 0) return;
@@ -77,18 +77,14 @@ void thread_pool::parallel_for(int start, int end, const std::function<void(int)
         int batch_start = i;
         int batch_end = std::min(i + batch_size, end);
 
-        add_job([=]()
+        auto batch_job = [=]()
         {
-            for (int j = batch_start; j < batch_end; ++j)
-            {
-                func(j);
-            }
-        });
+            for (int j = batch_start; j < batch_end; ++j) func(j);
+        };
+
+        add_job(batch_job);
     }
 
-    // wait for all jobs to finish
-    while (is_busy() || active_jobs > 0)
-    {
-        std::this_thread::yield();
-    }
+    // wait for the other jobs
+    while (is_busy() || active_jobs > 0) std::this_thread::yield();
 }
